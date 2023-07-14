@@ -1,2 +1,2 @@
 # tiwall
-In this project I tried to crawl tiwall.com to find all upcomming theaters and picked some features to have a better choice options.
+In this project, my aim was to crawl tiwall.com in order to gather information on upcoming theaters. I focused on selecting specific features to provide users with better options and choices.
