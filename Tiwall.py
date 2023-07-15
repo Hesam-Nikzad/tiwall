@@ -53,10 +53,13 @@ def crawl(url):
     theater['title'] = title
 
     # Price
-    price = soup.find(class_='page-base-info-price').text.strip()
-    price = price.split(',')[0].split('\xa0')[1]
-    price = int(price)
-    theater['price'] = price
+    try:
+        price = soup.find(class_='page-base-info-price').text.strip()
+        price = price.split(',')[0].split('\xa0')[1]
+        price = int(price)
+        theater['price'] = price
+    except:
+        theater['price'] = 'نامعلوم'
 
     # Location, Time, Duration 
     baseInfo = soup.find(class_='page-base-info')
@@ -91,10 +94,18 @@ def crawl(url):
     ind = date.find('تا')
     date = date[ind + 3:]
     date = date.split(' ')
-    month = month2int(date[1])
-    day = int(date[0])
+    try:
+        day = int(date[0])
+        month = month2int(date[1])
+    except:
+        date.pop(0)
+        day = int(date[0])
+        month = month2int(date[1])
+    
     today = jdatetime.date.today()
-    if month < today.month:
+    if len(date) == 3:
+        year = int(date[2])
+    elif month < today.month and today.month >= 10:
         year = today.year + 1
     else:
         year = today.year
@@ -103,22 +114,23 @@ def crawl(url):
 
     # Director
     infoFirst = soup.find(class_='page-info-section first')
-    director = infoFirst.find('label', string=lambda text: 'کارگردان' in text).parent.text.strip()
-    director = director.split(':')[1].strip()
-    director = director.replace('\u200c', '')    
-    theater['director'] = director
+    try:
+        director = infoFirst.find('label', string=lambda text: 'کارگردان' in text).parent.text.strip()
+        director = director.split(':')[1].strip()
+        director = director.replace('\u200c', '')    
+        theater['director'] = director
+    except:
+        theater['director'] = 'نامعلوم'
 
     # Writer
-    writer = infoFirst.find('label', string=lambda text: 'نویسنده' in text).parent.text.strip()
-    writer = writer.split(':')[1].strip()
-    writer = writer.replace('\u200c', '')
+    try:
+        writer = infoFirst.find('label', string=lambda text: 'نویسنده' in text).parent.text.strip()
+        writer = writer.split(':')[1].strip()
+        writer = writer.replace('\u200c', '')
+    except:
+        writer = 'نامعلوم'
+    
     theater['playwright'] = writer
-
-    # Cast
-    cast = infoFirst.find('label', string=lambda text: 'بازیگران' in text).parent.text.strip()
-    cast = cast.split(':')[1].strip()
-    cast = cast.replace('\u200c', '')
-    theater['cast'] = cast
 
     # Rate
     rating = soup.find('div', class_ = 'avg-rating tooltip')
@@ -138,27 +150,42 @@ def crawl(url):
     theater['rate'] = rate
     theater['voters'] = number
 
+    # Cast
+    try:
+        cast = infoFirst.find('label', string=lambda text: 'بازیگران' in text).parent.text.strip()
+        cast = cast.split(':')[1].strip()
+        cast = cast.replace('\u200c', '')
+        theater['cast'] = cast
+    except:
+        theater['cast'] = 'نامعلوم'
+
+    theater['url'] = url
 
     return theater
 
-path = os.getcwd().replace('\\', '/') + '/theaters.xlsx'
+path = os.getcwd().replace('\\', '/')
 
 pages = []
-for i in range (5):
+for i in range (1, 5):
+    print('Crawling search page number %s started' %i)
     pages.extend(Pages(i))
 pages = list(set(pages))
 print(len(pages))
 
 theatersList = []
 for page in pages:
-    
+    #page = 'https://www.tiwall.com//p/khatoun2'
     try:
         theater = crawl(page)
         print(theater)
         theatersList.append(theater)
-
+    
     except Exception as e:
-        print(e)
+        with open(path + '/error.txt', 'a') as file:
+            file.write('%s, %s \n' %(page, e))
+    #break
 
 df = pd.DataFrame(theatersList)
-df.to_excel(path, index=False)
+df['title'] = df.apply(lambda row: f'=HYPERLINK("{row["url"]}","{row["title"]}")', axis=1)
+df.drop(columns='url', axis=1, inplace=True)
+df.to_excel(path + '/theaters1.xlsx', index=False)
