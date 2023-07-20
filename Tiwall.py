@@ -4,6 +4,7 @@ import pandas as pd
 import jdatetime
 import re
 import os
+import traceback
 
 
 class tiwall:
@@ -200,7 +201,7 @@ class tiwall:
         pages = []
         for i in range (1, pageNumber+1):
             pages.extend(self.Pages(i))
-            print('Crawling search page number %s finished and %s links added' %(i, len(pages)))
+            print('Crawling search page number %s finished and %s links added in total' %(i, len(pages)))
         
         self.pages = list(set(pages))
 
@@ -209,13 +210,13 @@ class tiwall:
         for page in self.pages:
             try:
                 theater = self.crawl(page)
-                print(theater)
+                print(theater['title'], 'done')
                 self.theatersList.append(theater)
             
-            except Exception as e:
+            except:
                 with open(self.path + '/error.txt', 'a') as file:
-                    file.write('%s, %s \n' %(page, e))
-
+                    file.write('%s, %s \n' %(page, traceback.format_exc()))
+                
         return self.theatersList
 
     def save(self):
@@ -227,6 +228,6 @@ class tiwall:
 
 if __name__ == '__main__':
     Tiwall = tiwall()
-    Tiwall.find_links(1)
+    Tiwall.find_links(pageNumber=5)
     Tiwall.crawl_pages()
     Tiwall.save()

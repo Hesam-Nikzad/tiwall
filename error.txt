@@ -1,0 +1,84 @@
+https://www.tiwall.com//p/sisalegi, Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 212, in crawl_pages
+    theater = self.crawl(page)
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 78, in crawl
+    time = Bases[2].get_text(strip=True).split('|')
+IndexError: list index out of range
+ 
+https://www.tiwall.com//p/mard.khashmgin, Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 212, in crawl_pages
+    theater = self.crawl(page)
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 84, in crawl
+    duration = time[1].split(' ')
+IndexError: list index out of range
+ 
+https://www.tiwall.com//p/kheymeshabbazi, Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 105, in crawl
+    day = int(date[0])
+ValueError: invalid literal for int() with base 10: ''
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 212, in crawl_pages
+    theater = self.crawl(page)
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 109, in crawl
+    day = int(date[0])
+ValueError: invalid literal for int() with base 10: 'سه\u200cشنبه'
+ 
+https://www.tiwall.com//p/ghoroub.jadeh, Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 212, in crawl_pages
+    theater = self.crawl(page)
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 78, in crawl
+    time = Bases[2].get_text(strip=True).split('|')
+IndexError: list index out of range
+ 
+https://www.tiwall.com//p/bafande, Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 212, in crawl_pages
+    theater = self.crawl(page)
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 78, in crawl
+    time = Bases[2].get_text(strip=True).split('|')
+IndexError: list index out of range
+ 
+https://www.tiwall.com//p/vasiyatnameh, Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 212, in crawl_pages
+    theater = self.crawl(page)
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 84, in crawl
+    duration = time[1].split(' ')
+IndexError: list index out of range
+ 
+https://www.tiwall.com//p/estegbal, Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 212, in crawl_pages
+    theater = self.crawl(page)
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 78, in crawl
+    time = Bases[2].get_text(strip=True).split('|')
+IndexError: list index out of range
+ 
+https://www.tiwall.com//p/koli.majnoun, Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 212, in crawl_pages
+    theater = self.crawl(page)
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 84, in crawl
+    duration = time[1].split(' ')
+IndexError: list index out of range
+ 
+https://www.tiwall.com//p/fereshteh, Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 212, in crawl_pages
+    theater = self.crawl(page)
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 78, in crawl
+    time = Bases[2].get_text(strip=True).split('|')
+IndexError: list index out of range
+ 
+https://www.tiwall.com//p/sonativamajazi, Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 212, in crawl_pages
+    theater = self.crawl(page)
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 78, in crawl
+    time = Bases[2].get_text(strip=True).split('|')
+IndexError: list index out of range
+ 
+https://www.tiwall.com//p/backtoblack6, Traceback (most recent call last):
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 212, in crawl_pages
+    theater = self.crawl(page)
+  File "c:\Users\Hessum\OneDrive\Python Projects\tiwall\Tiwall.py", line 84, in crawl
+    duration = time[1].split(' ')
+IndexError: list index out of range
+ 
