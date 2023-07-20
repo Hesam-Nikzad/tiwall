@@ -5,25 +5,39 @@ import jdatetime
 import re
 import os
 import traceback
+import asyncio
+import aiohttp
 
 
-class tiwall:
+class async_tiwall:
     def __init__(self):
         self.path = os.getcwd().replace('\\', '/')
 
-    def Pages(self, pageNumber):
-        url = 'https://www.tiwall.com/showcase?filters=s:theater&p=%s' %pageNumber
-        response = requests.get(url)
-        soup = BeautifulSoup(response.content, "html.parser")
-        pages = soup.find_all('a', class_='item-page')
-        pagesList = []
-        
-        for page in pages:
-            pagesList.append('https://www.tiwall.com/' + page['href'])
-        
-        self.pagesList = pagesList
+    async def find_links(self, pageNumber):
 
-        return self.pagesList
+        def get_tasks(session):
+            tasks = []
+            for i in range(1, pageNumber+1):
+                url = 'https://www.tiwall.com/showcase?filters=s:theater&p=%s' %i
+                tasks.append(session.get(url))
+            
+            return tasks
+
+        soups = []
+        async with aiohttp.ClientSession() as session:
+            tasks = get_tasks(session)
+            responses = await asyncio.gather(*tasks)
+            for response in responses:
+                soups.append(BeautifulSoup(await response.text(), "html.parser"))
+
+        pagesList = []
+        for soup in soups:
+            page = soup.find_all('a', class_='item-page')
+            for link in page:
+                pagesList.append('https://www.tiwall.com/' + link['href'])
+        
+        print(f"{len(pagesList)} links were found from {pageNumber} search pages")
+        self.pagesList = pagesList
 
     def month2int(self, m):
         if m == 'فروردین':
@@ -51,10 +65,10 @@ class tiwall:
         elif m == 'اسفند':
             return 12
 
-    def crawl(self, url):
+    def crawl(self, soup, url):
         theater = {}
-        response = requests.get(url)
-        soup = BeautifulSoup(response.content, "html.parser")
+        #response = requests.get(url)
+        #soup = BeautifulSoup(response.content, "html.parser")
 
         # Title
         title = soup.find(class_='tooltip page-title').text.strip()
@@ -197,37 +211,41 @@ class tiwall:
                 clean_theater[key] = value
         return clean_theater
 
-    def find_links(self, pageNumber):
-        pages = []
-        for i in range (1, pageNumber+1):
-            pages.extend(self.Pages(i))
-            print('Crawling search page number %s finished and %s links added in total' %(i, len(pages)))
-        
-        self.pages = list(set(pages))
+    async def crawl_pages(self):
 
-    def crawl_pages(self):
-        self.theatersList = []
-        for page in self.pages:
-            try:
-                theater = self.crawl(page)
-                print(theater['title'], 'done')
-                self.theatersList.append(theater)
+        def get_tasks(session):
+            tasks = []
+            for url in self.pagesList:
+                tasks.append(session.get(url))
             
-            except:
-                with open(self.path + '/error.txt', 'a') as file:
-                    file.write('%s, %s \n' %(page, traceback.format_exc()))
-                
-        return self.theatersList
+            return tasks 
 
+        self.theatersList = []
+
+        async with aiohttp.ClientSession() as session:
+            tasks = get_tasks(session)
+            responses = await asyncio.gather(*tasks)
+            for response, url in zip(responses, self.pagesList):
+                try:
+                    self.theatersList.append(self.crawl(BeautifulSoup(await response.text(), "html.parser"), url))
+                except:
+                    with open(self.path + '/error.txt', 'a') as file:
+                        file.write('%s \n' %(traceback.format_exc()))
+        
+        print('All theaters webpages are crawled')
+        return self.theatersList
+    
     def save(self):
         df = pd.DataFrame(self.theatersList)
         df['title'] = df.apply(lambda row: f'=HYPERLINK("{row["url"]}","{row["title"]}")', axis=1)
         df.drop(columns='url', axis=1, inplace=True)
         df.to_excel(self.path + '/theaters.xlsx', index=False)
 
+        print(f'The theaters information saved on: {self.path}')
+    
 
 if __name__ == '__main__':
-    Tiwall = tiwall()
-    Tiwall.find_links(pageNumber=5)
-    Tiwall.crawl_pages()
+    Tiwall = async_tiwall()
+    asyncio.run(Tiwall.find_links(3))
+    asyncio.run(Tiwall.crawl_pages())
     Tiwall.save()
