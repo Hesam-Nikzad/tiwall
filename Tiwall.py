@@ -239,9 +239,15 @@ class async_tiwall:
         print('All theaters webpages are crawled')
         return self.theatersList
     
+    def to_DB(self):
+        query = "SELECT * FROM theater;"
+        dfHistory = pd.read_sql(query, self.engine)
+        df = pd.DataFrame(self.theatersList)
+        df = df.loc[~df.url.isin(dfHistory.URL)]
+        df.to_sql(name='theater', con=self.engine, if_exists='append', index=False, chunksize=1000)
+
     def save(self):
         df = pd.DataFrame(self.theatersList)
-        df.to_sql(name='theater', con=self.engine, if_exists='append', index=False, chunksize=1000)
         df['title'] = df.apply(lambda row: f'=HYPERLINK("{row["url"]}","{row["title"]}")', axis=1)
         df.drop(columns='url', axis=1, inplace=True)
         df.to_excel(self.path + '/theaters.xlsx', index=False)
@@ -253,4 +259,5 @@ if __name__ == '__main__':
     Tiwall = async_tiwall()
     asyncio.run(Tiwall.find_links(1))
     asyncio.run(Tiwall.crawl_pages())
+    Tiwall.to_DB()
     Tiwall.save()
