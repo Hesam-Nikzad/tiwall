@@ -1,4 +1,3 @@
-import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import jdatetime
@@ -7,11 +6,16 @@ import os
 import traceback
 import asyncio
 import aiohttp
+import mysql.connector
+from sqlalchemy import create_engine
 
 
 class async_tiwall:
     def __init__(self):
         self.path = os.getcwd().replace('\\', '/')
+        self.cnx = mysql.connector.connect(user='hessum', password='harchi', host='172.30.112.1', database='theaters')
+        self.engine = create_engine('mysql+pymysql://hessum:harchi@172.30.112.1:3306/theaters')
+        print('connected to the mysql')
 
     async def find_links(self, pageNumber):
 
@@ -237,6 +241,7 @@ class async_tiwall:
     
     def save(self):
         df = pd.DataFrame(self.theatersList)
+        df.to_sql(name='theater', con=self.engine, if_exists='append', index=False, chunksize=1000)
         df['title'] = df.apply(lambda row: f'=HYPERLINK("{row["url"]}","{row["title"]}")', axis=1)
         df.drop(columns='url', axis=1, inplace=True)
         df.to_excel(self.path + '/theaters.xlsx', index=False)
@@ -246,6 +251,6 @@ class async_tiwall:
 
 if __name__ == '__main__':
     Tiwall = async_tiwall()
-    asyncio.run(Tiwall.find_links(3))
+    asyncio.run(Tiwall.find_links(1))
     asyncio.run(Tiwall.crawl_pages())
     Tiwall.save()
