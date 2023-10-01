@@ -16,6 +16,14 @@ class async_tiwall:
         self.cnx = mysql.connector.connect(user='hessum', password='harchi', host='172.30.112.1', database='theaters')
         self.engine = create_engine('mysql+pymysql://hessum:harchi@172.30.112.1:3306/theaters')
         print('connected to the mysql')
+        self.my_timeout = aiohttp.ClientTimeout(
+            total=None, 
+            sock_connect=3,
+            sock_read=3,
+            connect=3
+        )
+
+        self.client_args = dict(trust_env=True, timeout=self.my_timeout)
 
     async def find_links(self, pageNumber):
 
@@ -38,7 +46,12 @@ class async_tiwall:
         for soup in soups:
             page = soup.find_all('a', class_='item-page')
             for link in page:
-                pagesList.append('https://www.tiwall.com/' + link['href'])
+                pagesList.append('https://www.tiwall.com' + link['href'])
+
+        query = "SELECT * FROM theater;"
+        dfHistory = pd.read_sql(query, self.engine)
+        loaded_urls = dfHistory.URL.to_list()
+        pagesList = [item for item in pagesList if item not in loaded_urls]
         
         print(f"{len(pagesList)} links were found from {pageNumber} search pages")
         self.pagesList = pagesList
@@ -71,8 +84,6 @@ class async_tiwall:
 
     def crawl(self, soup, url):
         theater = {}
-        #response = requests.get(url)
-        #soup = BeautifulSoup(response.content, "html.parser")
 
         # Title
         title = soup.find(class_='tooltip page-title').text.strip()
@@ -85,7 +96,7 @@ class async_tiwall:
             price = int(price)
             theater['price'] = price
         except:
-            theater['price'] = 'نامعلوم'
+            theater['price'] = 0
 
         # Location, Time, Duration 
         baseInfo = soup.find(class_='page-base-info')
@@ -134,7 +145,7 @@ class async_tiwall:
             year = today.year + 1
         else:
             year = today.year
-        date = jdatetime.date(year, month, day)
+        date = jdatetime.date(year, month, day).togregorian()
         theater['date'] = date
 
         # City, Category, and Group
@@ -226,9 +237,13 @@ class async_tiwall:
 
         self.theatersList = []
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(**self.client_args) as session:
             tasks = get_tasks(session)
-            responses = await asyncio.gather(*tasks)
+            try:
+                responses = await asyncio.gather(*tasks, return_exceptions=True)
+            except:
+                print('Timeout')
+            print('All webpages are downloded')
             for response, url in zip(responses, self.pagesList):
                 try:
                     self.theatersList.append(self.crawl(BeautifulSoup(await response.text(), "html.parser"), url))
@@ -244,6 +259,7 @@ class async_tiwall:
         dfHistory = pd.read_sql(query, self.engine)
         df = pd.DataFrame(self.theatersList)
         df = df.loc[~df.url.isin(dfHistory.URL)]
+        print(f'{len(df)} theaters added to the database')
         df.to_sql(name='theater', con=self.engine, if_exists='append', index=False, chunksize=1000)
 
     def save(self):
@@ -257,7 +273,7 @@ class async_tiwall:
 
 if __name__ == '__main__':
     Tiwall = async_tiwall()
-    asyncio.run(Tiwall.find_links(1))
+    asyncio.run(Tiwall.find_links(50))
     asyncio.run(Tiwall.crawl_pages())
     Tiwall.to_DB()
     Tiwall.save()
