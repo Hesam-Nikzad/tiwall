@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import pandas as pd
 import jdatetime
+import datetime
 import re
 import os
 import traceback
@@ -14,14 +15,14 @@ class async_tiwall:
     def __init__(self):
         self.path = os.getcwd().replace('\\', '/')
         self.cnx = mysql.connector.connect(user='hessum', password='harchi', host='172.30.112.1', database='theaters')
+        self.cursor = self.cnx.cursor()
         self.engine = create_engine('mysql+pymysql://hessum:harchi@172.30.112.1:3306/theaters')
         print('connected to the mysql')
         self.my_timeout = aiohttp.ClientTimeout(
             total=None, 
             sock_connect=3,
             sock_read=3,
-            connect=3
-        )
+            connect=3)
 
         self.client_args = dict(trust_env=True, timeout=self.my_timeout)
 
@@ -50,8 +51,7 @@ class async_tiwall:
 
         query = "SELECT * FROM theater;"
         dfHistory = pd.read_sql(query, self.engine)
-        loaded_urls = dfHistory.URL.to_list()
-        pagesList = [item for item in pagesList if item not in loaded_urls]
+        #pagesList = [item for item in pagesList if item not in dfHistory.URL.to_list()]
         
         print(f"{len(pagesList)} links were found from {pageNumber} search pages")
         self.pagesList = pagesList
@@ -269,11 +269,53 @@ class async_tiwall:
         df.to_excel(self.path + '/theaters.xlsx', index=False)
 
         print(f'The theaters information saved on: {self.path}')
-    
+
+    def date_correction(self, url):
+        
+        query = 'SELECT * FROM comments WHERE theater_url="%s";' %url
+        commentsDates = pd.read_sql(query, self.engine).sort_values(by='comment_date', ascending=False)
+        commentsDates.sort_values(by='comment_date', ascending=False, inplace=True)
+        lastCommentDate = commentsDates.iloc[0]['comment_date']
+        commentYear = lastCommentDate.year
+
+        query = 'SELECT date FROM theater WHERE URL="%s";' %url
+        theaterDate = pd.read_sql(query, self.engine).loc[0, 'date']
+        
+        month = theaterDate.month
+        day = theaterDate.day
+        deltaDate = datetime.timedelta(days=0)
+        
+        if lastCommentDate.date() - datetime.date(commentYear, month, day) >= deltaDate:
+            theaterDate = datetime.date(commentYear, month, day)
+        
+        elif lastCommentDate.date() - datetime.date(commentYear + 1, month, day) >= deltaDate:
+            theaterDate = datetime.date(commentYear + 1, month, day)
+        
+        elif lastCommentDate.date() - datetime.date(commentYear - 1, month, day) >= deltaDate:
+            theaterDate = datetime.date(commentYear - 1, month, day)
+        
+        updateQuery = "UPDATE theater SET date = '%s' WHERE URL = '%s';" %(theaterDate, url)
+        self.cursor.execute(updateQuery)
+        self.cnx.commit()        
+
+    def correcting_dates(self):
+
+        query = "SELECT * FROM theater;"
+        dfHistory = pd.read_sql(query, self.engine)
+        pagesList = dfHistory.URL.to_list()
+        
+        for theater in pagesList:
+            print(theater)
+            try:
+                self.date_correction(theater)
+            except:
+                pass
+
 
 if __name__ == '__main__':
     Tiwall = async_tiwall()
-    asyncio.run(Tiwall.find_links(50))
-    asyncio.run(Tiwall.crawl_pages())
-    Tiwall.to_DB()
-    Tiwall.save()
+    #asyncio.run(Tiwall.find_links(1))
+    #asyncio.run(Tiwall.crawl_pages())
+    #Tiwall.to_DB()
+    #Tiwall.save()
+    Tiwall.correcting_dates()
